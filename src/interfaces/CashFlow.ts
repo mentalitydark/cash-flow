@@ -1,8 +1,10 @@
 import { TType } from "@/classes/CashFlow/Type"
-import { IGenericEntity } from "@/interfaces"
+import { IGenericEntityMethods, IGenericEntityProps } from "@/interfaces"
 import { TDate } from "@/types"
 
-export interface ICashFlow extends IGenericEntity {
+export interface ICashFlowMethods extends IGenericEntityMethods<ICashFlowProps> {}
+
+export interface ICashFlowProps extends IGenericEntityProps {
     id?: number
     description?: string
     type?: TType
