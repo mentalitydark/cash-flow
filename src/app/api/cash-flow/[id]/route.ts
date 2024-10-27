@@ -1,49 +1,52 @@
-import { EntityNotFound, ResponseErrors } from "@/errors"
-import { Executor } from "@/Repositories"
-import { RepositoryMemory } from "@/Repositories/CashFlow"
-import { StatusCodes } from "http-status-codes"
 import { NextRequest } from "next/server"
 import { ZodError } from "zod"
+
+import { EntityNotFound } from "@/errors"
+import { RepositoryDatabase } from "@/Repositories/CashFlow"
+import { Response } from "@/classes"
 
 type params = { params: Promise<{ id: string }>}
 
 export async function PUT(request: NextRequest, { params }: params) {
     try {
         const { id } = await params
-        const repository = new RepositoryMemory
-        const entity = Executor.getOne(repository, Number(id))
+
+        const repository = new RepositoryDatabase
+
+        const entity = await repository.getOne(Number(id))
 
         entity.updateFromJson(await request.json())
 
-        Executor.update(repository, entity)
+        await repository.update(entity)
 
-        return Response.json({ data: entity.toJson() }, { status: StatusCodes.OK })
+        return Response.OK(entity.toJson())
     } catch (error) {
         if (error instanceof ZodError)
-            return ResponseErrors.BadRequest(error, { title: 'Parameters required', instance: request.url, error: error.issues})
+            return Response.BAD_REQUEST(error, { title: 'Parameters required', instance: request.url, error: error.issues})
 
         if (error instanceof EntityNotFound)
-            return ResponseErrors.NotFound(error, {instance: request.url})
+            return Response.NOT_FOUND(error, {instance: request.url})
 
         if (error instanceof Error)
-            return ResponseErrors.InternalServerError(error, {instance: request.url})
+            return Response.INTERNAL_SERVER_ERROR(error, {instance: request.url})
     }
 }
 
 export async function DELETE(request: NextRequest, { params }: params) {
     try {
         const { id } = await params
-        const repository = new RepositoryMemory
-        const entity = Executor.getOne(repository, Number(id))
+        const repository = new RepositoryDatabase
 
-        Executor.delete(repository, entity)
+        const entity = await repository.getOne(Number(id))
 
-        return Response.json({}, { status: StatusCodes.OK })
+        await repository.delete(entity)
+
+        return Response.OK({})
     } catch (error) {
         if (error instanceof EntityNotFound)
-            return ResponseErrors.NotFound(error, {instance: request.url})
+            return Response.NOT_FOUND(error, {instance: request.url})
 
         if (error instanceof Error)
-            return ResponseErrors.InternalServerError(error, {instance: request.url})
+            return Response.INTERNAL_SERVER_ERROR(error, {instance: request.url})
     }
 }
