@@ -11,24 +11,27 @@ export class CashFlow extends GenericEntity<ICashFlow> implements ICashFlow {
     private _value?: number
     private _date?: TDate
 
-    public validate(): void {
+    public static validate(json: ICashFlow) {
         const schema = z.object({
             description: z.string().trim(),
             type: z.enum([TType.EXPENSES, TType.REVENUE]),
             value: z.number().min(0),
-            date: z.number()
+            date: z.union([z.number(), z.string().regex(/\d{4}(-\d{2}){2} \d{2}(:\d{2}){2}/, "Data precisa ser no formato Y-M-d H:i:s")])
         })
 
-        schema.parse(this.toJson())
+        return schema.parse(json)
     }
 
     public static createFromJson(json: ICashFlow): CashFlow {
         const entity = new CashFlow
 
+        entity.id = json.id
         entity.description = json.description
         entity.type = json.type
         entity.value = json.value
         entity.date = json.date
+        entity.created_at = json.created_at
+        entity.updated_at = json.updated_at
 
         return entity
     }

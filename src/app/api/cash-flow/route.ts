@@ -1,9 +1,8 @@
 import { NextRequest } from "next/server"
 import { ZodError } from "zod"
 
-import { RepositoryMemory } from "@/Repositories/CashFlow"
-import { Executor } from "@/Repositories"
-import { EntityNotFound, ResponseErrors } from "@/errors"
+import { RepositoryDatabase } from "@/Repositories/CashFlow"
+import { EntityNotFound } from "@/errors"
 import { CashFlow, Response } from "@/classes"
 import { ICashFlow } from "@/interfaces"
 
@@ -13,24 +12,23 @@ export async function GET(request: NextRequest) {
     const id = searchParams.get('id')
 
     try {
-        const repository = new RepositoryMemory
+        const repository = new RepositoryDatabase
 
-        const entities = Executor.get(repository, Number(id))
+        if (id) {
+            const entity = await repository.getOne(Number(id))
 
-        let data = {}
-        if (Array.isArray(entities)) {
-            data = entities.map(e => e.toJson())
+            return Response.OK(entity.toJson())
         } else {
-            data = entities.toJson()
+            const entities = await repository.getAll()
+
+            return Response.OK(entities.map(e => e.toJson()))
         }
-    
-        return Response.OK(data)
     } catch(error) {
         if (error instanceof EntityNotFound)
-            return ResponseErrors.NotFound(error, {instance: request.url})
+            return Response.NOT_FOUND(error, {instance: request.url})
 
         if (error instanceof Error)
-            return ResponseErrors.InternalServerError(error, {instance: request.url})
+            return Response.INTERNAL_SERVER_ERROR(error, {instance: request.url})
     }
 
 }
@@ -39,18 +37,18 @@ export async function POST(request: NextRequest) {
     try {
         const body = await request.json() as ICashFlow
 
-        const entity = CashFlow.createFromJson(body)
+        const entity = CashFlow.createFromJson(CashFlow.validate(body))
 
-        entity.validate()
+        const repository = new RepositoryDatabase
 
-        Executor.add(new RepositoryMemory, entity)
+        await repository.insert(entity)
     
         return Response.CREATED(entity.toJson())
     } catch (error) {
         if (error instanceof ZodError)
-            return ResponseErrors.BadRequest(error, { title: 'Parameters required', instance: request.url, error: error.issues})
+            return Response.BAD_REQUEST(error, { title: 'Parameters required', instance: request.url, error: error.issues})
 
         if (error instanceof Error)
-            return ResponseErrors.InternalServerError(error, {instance: request.url})
+            return Response.INTERNAL_SERVER_ERROR(error, {instance: request.url})
     }
 }

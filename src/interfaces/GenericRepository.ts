@@ -1,9 +1,9 @@
 import { GenericEntity } from "@/classes"
 
 export interface IGenericRepository<T extends GenericEntity<T>> {
-    getAll(): T[]
-    getOne(id: number): T
-    insert(entity: T): T
-    update(entity: T): T
-    delete(entity: T): void
+    getAll(): T[]|Promise<T[]>
+    getOne(id: number): T|Promise<T>
+    insert(entity: T): T|Promise<T>
+    update(entity: T): T|Promise<T>
+    delete(entity: T): void|Promise<void>
 }

@@ -23,7 +23,7 @@ export class RepositoryMemory extends RepositoryBase<CashFlow> implements IGener
     }
 
     public insert(entity: CashFlow): CashFlow {
-        entity = super.insert(entity)
+        super.insert(entity)
 
         entity.id = RepositoryMemory.memory.length + 1
 
@@ -34,7 +34,7 @@ export class RepositoryMemory extends RepositoryBase<CashFlow> implements IGener
 
     public update(entity: CashFlow): CashFlow {
         console.log(RepositoryMemory.memory)
-        entity = super.update(entity)
+        super.update(entity)
 
         const entityInArray = RepositoryMemory.memory.find(({ id }) => id === entity.id)
 

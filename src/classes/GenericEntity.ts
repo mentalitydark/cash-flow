@@ -5,8 +5,6 @@ export abstract class GenericEntity<T extends IGenericEntity> implements IGeneri
     protected _created_at?: TDate
     protected _updated_at?: TDate
 
-    public abstract validate(): void
-
     public toJson() {
         const entries = Object.entries(this) as [string, string|number][]
 
@@ -24,16 +22,18 @@ export abstract class GenericEntity<T extends IGenericEntity> implements IGeneri
         return this._created_at
     }
 
-    public set created_at(value: TDate) {
-        this._created_at = value
+    public set created_at(value: TDate|undefined) {
+        if (value)
+            this._created_at = value
     }
 
     public get updated_at(): TDate|undefined {
         return this._updated_at
     }
 
-    public set updated_at(value: TDate) {
-        this._updated_at = value
+    public set updated_at(value: TDate|undefined) {
+        if (value)
+            this._updated_at = value
     }
     
 }
