@@ -1,1 +1,1 @@
-export type TDate = number | string
+export type TDate = string

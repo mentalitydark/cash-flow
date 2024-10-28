@@ -15,11 +15,11 @@ export async function PUT(request: NextRequest, { params }: params) {
 
         const entity = await repository.getOne(Number(id))
 
-        entity.updateFromJson(await request.json())
+        entity.updateFromJSON(await request.json())
 
         await repository.update(entity)
 
-        return Response.OK(entity.toJson())
+        return Response.OK(entity.toJSON())
     } catch (error) {
         if (error instanceof ZodError)
             return Response.BAD_REQUEST(error, { title: 'Parameters required', instance: request.url, error: error.issues})

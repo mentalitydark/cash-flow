@@ -1,10 +1,10 @@
 import { CashFlow } from "@/classes";
-import { RepositoryBase } from "../RepositoryBase";
 import { EntityNotFound } from "@/errors";
-import { IGenericRepository } from "@/interfaces";
+import { ICashFlowProps, IGenericRepository } from "@/interfaces";
 import { Database } from "@/database";
+import { createSelectQuery } from "@/Utils";
 
-export class RepositoryDatabase extends RepositoryBase<CashFlow> implements IGenericRepository<CashFlow> {
+export class RepositoryDatabase implements IGenericRepository<CashFlow> {
 
     private _table = "cash_flow"
 
@@ -14,12 +14,16 @@ export class RepositoryDatabase extends RepositoryBase<CashFlow> implements IGen
 
             const db = await Database.get()
     
-            await db.each<CashFlow>(`SELECT * FROM ${this._table}`, (error, row) => {
+            await db.each<ICashFlowProps>(createSelectQuery<ICashFlowProps>(["id", "description", "type", "value", "date"], this._table), (error, row) => {
                     if (error) {
                         throw error
                     }
     
-                    entities.push(CashFlow.createFromJson(row))
+                    const entity = new CashFlow()
+
+                    entity.createFromJSON(row)
+                    
+                    entities.push(entity)
                 })
 
             return entities
@@ -35,13 +39,20 @@ export class RepositoryDatabase extends RepositoryBase<CashFlow> implements IGen
         try {
             const db = await Database.get()
 
-            const result = await db.get(`SELECT * FROM ${this._table} WHERE id = :id`, { ':id': id })
+            const result = await db.get<ICashFlowProps>(`
+                ${createSelectQuery<ICashFlowProps>(["id", "description", "type", "value", "date"], this._table)}
+                WHERE id = :id`, { ':id': id }
+            )
 
             if (!result) {
                 throw new EntityNotFound(id)
             }
 
-            return CashFlow.createFromJson(result)
+            const entity = new CashFlow()
+
+            entity.createFromJSON(result)
+
+            return entity
         } catch (error) {
             throw error
         } finally {
@@ -51,16 +62,20 @@ export class RepositoryDatabase extends RepositoryBase<CashFlow> implements IGen
 
     public async insert(entity: CashFlow): Promise<CashFlow> {
         try {
-            entity = super.insert(entity) as CashFlow
-
             const db = await Database.get()
 
-            const result = await db.run(`
-                INSERT INTO ${this._table} (description, type, value, date, created_at)
-                VALUES (?, ?, ?, ?, ?)
-            `, [entity.description, entity.type, entity.value, entity.date, entity.created_at])
+            const result = await db.get<{id: string, created_at: string}>(`
+                INSERT INTO ${this._table} (description, type, value, date)
+                VALUES (?, ?, ?, ?)
+                RETURNING id, created_at
+            `, [entity.description, entity.type, entity.value, entity.date])
 
-            entity.id = result.lastID
+            if (!result) {
+                throw new Error("Erro ao inserir uma movimentação financeira")
+            }
+
+            entity.id = Number(result.id)
+            entity.created_at = result.created_at
 
             return entity
         } catch (error) {
@@ -72,32 +87,31 @@ export class RepositoryDatabase extends RepositoryBase<CashFlow> implements IGen
 
     public async update(entity: CashFlow): Promise<CashFlow> {
         try {
-            entity = super.update(entity) as CashFlow
-
             const db = await Database.get()
 
-            const result = await db.run(`
+            const result = await db.get<{ updated_at: string }>(`
                 UPDATE ${this._table}
                 SET
                     description = $description,
                     type = $type,
                     value = $value,
-                    date = $date,
-                    updated_at = $updated_at
+                    date = $date
                 WHERE id = $id
+                RETURNING DATETIME(updated_at, 'localtime') AS updated_at
             `, {
                 $description: entity.description,
                 $type: entity.type,
                 $value: entity.value,
                 $date: entity.date,
-                $updated_at: entity.updated_at,
                 $id: entity.id
             })
 
-            if (!result.changes) {
-                throw new Error("Nenhuma linha alterada")
+            if (!result) {
+                throw new Error("Não foi possível alterar a movimentação financeira")
             }
-    
+            
+            entity.updated_at = result.updated_at
+            
             return entity
         } catch (error) {
             throw error
@@ -116,7 +130,7 @@ export class RepositoryDatabase extends RepositoryBase<CashFlow> implements IGen
             `, { $id: entity.id })
 
             if (!result.changes) {
-                throw new Error("Nenhuma linha alterada")
+                throw new Error("Não foi possível deletar a movimentação financeira")
             }
             
         } catch (error) {

@@ -1,9 +1,8 @@
 import { CashFlow } from "@/classes";
-import { RepositoryBase } from "../RepositoryBase";
 import { EntityNotFound } from "@/errors";
 import { IGenericRepository } from "@/interfaces";
 
-export class RepositoryMemory extends RepositoryBase<CashFlow> implements IGenericRepository<CashFlow> {
+export class RepositoryMemory implements IGenericRepository<CashFlow> {
 
     private static memory: CashFlow[] = []
 
@@ -14,7 +13,6 @@ export class RepositoryMemory extends RepositoryBase<CashFlow> implements IGener
     public getOne(id: number): CashFlow {
         const entityInArray = RepositoryMemory.memory.find((e) => e.id === id)
 
-        console.log(entityInArray)
         if(!entityInArray) {
             throw new EntityNotFound(id)
         }
@@ -23,8 +21,6 @@ export class RepositoryMemory extends RepositoryBase<CashFlow> implements IGener
     }
 
     public insert(entity: CashFlow): CashFlow {
-        super.insert(entity)
-
         entity.id = RepositoryMemory.memory.length + 1
 
         RepositoryMemory.memory.push(entity)
@@ -33,9 +29,6 @@ export class RepositoryMemory extends RepositoryBase<CashFlow> implements IGener
     }
 
     public update(entity: CashFlow): CashFlow {
-        console.log(RepositoryMemory.memory)
-        super.update(entity)
-
         const entityInArray = RepositoryMemory.memory.find(({ id }) => id === entity.id)
 
         if(!entityInArray) {
