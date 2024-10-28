@@ -1,5 +1,8 @@
+import 'dotenv/config'
 import sqlite3 from "sqlite3"
 import { open, Database as _Database } from "sqlite"
+
+const filename = "./"+ process.env.DATABASE_FILE
 
 export abstract class Database {
 
@@ -12,7 +15,7 @@ export abstract class Database {
 
         try {
             const connection = await open({
-                filename: "./cash-flow.db",
+                filename,
                 driver: sqlite3.Database
             }) as _Database
 
